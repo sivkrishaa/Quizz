@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduQuiz AI — Intelligent Quiz Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:    #0f0e0d;
+    --paper:  #faf8f4;
+    --cream:  #f0ece3;
+    --sage:   #2d4a3e;
+    --sage-l: #e8f0ec;
+    --gold:   #b8860b;
+    --gold-l: #fdf4dc;
+    --red:    #c0392b;
+    --red-l:  #fdecea;
+    --border: #ddd8cc;
+    --muted:  #7a756a;
+    --r:      10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #login-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px);
+  }
+
+  .login-box {
+    position: relative;
+    background: var(--paper);
+    border-radius: 16px;
+    padding: 3rem 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    margin: 1rem;
+    border: 1px solid var(--border);
+  }
+
+  .login-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--sage);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.5px;
+  }
+
+  .login-tagline {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+
+  .login-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  .login-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    letter-spacing: 0.04em;
+    margin-bottom: 1rem;
+  }
+  .login-input:focus { border-color: var(--sage); }
+
+  .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 1.25rem 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .login-divider::before,
+  .login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .login-btn {
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 13px;
+    background: var(--sage);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: opacity 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .login-btn:hover { opacity: 0.88; }
+
+  .login-error {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--red);
+    text-align: center;
+    min-height: 20px;
+  }
+
+  .login-footer {
+    position: relative;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .apikey-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .apikey-hint a { color: var(--sage); text-decoration: none; }
+  .apikey-hint a:hover { text-decoration: underline; }
+
+  /* ── MAIN APP SCREEN ── */
+  #app-screen {
+    flex-direction: column;
+    background: var(--paper);
+  }
+
+  .topbar {
+    border-bottom: 1px solid var(--border);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .topbar-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .topbar-brand {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    color: var(--sage);
+    letter-spacing: -0.3px;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .topbar-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--sage-l);
+    color: var(--sage);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  .signout-btn {
+    font-size: 13px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    padding: 4px 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .signout-btn:hover { color: var(--ink); border-color: var(--ink); }
+
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+    width: 100%;
+  }
+
+  .page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-title em {
+    color: var(--sage);
+    font-style: italic;
+  }
+
+  .page-sub {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 540px;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .form-row.single { grid-template-columns: 1fr; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+
+  .field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus { border-color: var(--sage); background: #fff; }
+  .field textarea { min-height: 70px; }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chip:hover { border-color: var(--sage); color: var(--sage); }
+  .chip.active { background: var(--sage); border-color: var(--sage); color: #fff; }
+
+  .gen-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--sage);
+    color: #fff;
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .gen-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+  .gen-btn:active:not(:disabled) { transform: translateY(0); }
+  .gen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .loading-card {
+    display: none;
+    background: var(--sage-l);
+    border: 1px solid #c5d9cf;
+    border-radius: 14px;
+    padding: 2rem;
+    text-align: center;
+  }
+  .loading-card.visible { display: block; }
+
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid #c5d9cf;
+    border-top-color: var(--sage);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    color: var(--sage);
+    margin-bottom: 0.25rem;
+  }
+  .loading-sub { font-size: 13px; color: #4a7060; }
+
+  .error-bar {
+    display: none;
+    background: var(--red-l);
+    border: 1px solid #f0c0bc;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 1rem;
+  }
+  .error-bar.visible { display: block; }
+
+  #quiz-section { display: none; }
+  #quiz-section.visible { display: block; }
+
+  .score-tracker {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.75rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .score-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    color: var(--sage);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .score-info { flex: 1; }
+  .score-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+
+  .progress-rail {
+    height: 6px;
+    background: var(--cream);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--sage);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .score-pct {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 5px;
+  }
+
+  .quiz-meta-bar {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .quiz-heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .quiz-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .question-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .q-number {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .q-text {
+    font-size: 15px;
+    color: var(--ink);
+    font-weight: 400;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--cream);
+  }
+  .option:hover:not(.locked) { border-color: var(--sage); background: var(--sage-l); }
+
+  .option-letter {
+    font-weight: 500;
+    min-width: 18px;
+    color: var(--muted);
+    font-size: 13px;
+    padding-top: 1px;
+  }
+
+  .option.correct { background: var(--sage-l); border-color: var(--sage); color: var(--sage); }
+  .option.correct .option-letter { color: var(--sage); }
+  .option.wrong { background: var(--red-l); border-color: #e8a09a; color: var(--red); }
+  .option.wrong .option-letter { color: var(--red); }
+  .option.locked { cursor: default; }
+
+  .explanation {
+    display: none;
+    background: var(--gold-l);
+    border: 1px solid #e8d49a;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #6b5000;
+    line-height: 1.6;
+  }
+  .explanation.visible { display: block; }
+
+  .explanation-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+    margin-bottom: 5px;
+  }
+
+  .quiz-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .action-btn {
+    padding: 12px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .action-btn.secondary { background: var(--cream); border: 1px solid var(--border); color: var(--ink); }
+  .action-btn.secondary:hover { border-color: var(--sage); color: var(--sage); }
+  .action-btn.primary { background: var(--sage); border: 1px solid var(--sage); color: #fff; font-weight: 500; }
+  .action-btn.primary:hover { opacity: 0.88; }
+
+  .app-footer {
+    border-top: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--paper);
+  }
+
+  @media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+    .quiz-actions { grid-template-columns: 1fr; }
+    .page-title { font-size: 1.7rem; }
+    .score-num { font-size: 1.8rem; }
+    .quiz-meta-bar { flex-direction: column; gap: 0.5rem; }
+  }
+
+  @media print {
+    .topbar, .quiz-actions, .score-tracker, #form-card, .loading-card, .error-bar, .app-footer { display: none !important; }
+    .option { cursor: default; }
+    .explanation { display: block !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="screen active">
+  <div class="login-box">
+    <div class="login-logo">EduQuiz AI</div>
+    <div class="login-tagline">AI-Powered Quiz Generation for Educators</div>
+
+    <label class="login-label" for="access-input">Access Code</label>
+    <input
+      class="login-input"
+      type="password"
+      id="access-input"
+      placeholder="Enter your access code"
+      autocomplete="off"
+      onkeydown="if(event.key==='Enter') doLogin()"
+    />
+
+    <input type="hidden" id="api-key-input" value=""/>
+
+    <button class="login-btn" onclick="doLogin()">Enter Platform</button>
+    <div class="login-error" id="login-error"></div>
+
+    <div class="login-footer">
+      Powered by Google Gemini AI &nbsp;·&nbsp; Built for Educators
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP SCREEN -->
+<div id="app-screen" class="screen">
+  <div style="display:flex; flex-direction:column; min-height:100vh; width:100%;">
+
+    <nav class="topbar">
+      <div class="topbar-inner">
+        <div class="topbar-brand">EduQuiz AI</div>
+        <div class="topbar-right">
+          <span class="topbar-badge">Educator Access</span>
+          <button class="signout-btn" onclick="doSignout()">Sign out</button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="content">
+
+      <div class="page-header">
+        <h1 class="page-title">Generate a <em>quiz</em><br>in seconds.</h1>
+        <p class="page-sub">Enter any topic, choose your level, and Gemini AI builds a ready-to-use multiple-choice quiz with answers and explanations.</p>
+      </div>
+
+      <div class="error-bar" id="error-bar"></div>
+
+      <div class="card" id="form-card">
+        <div class="card-title">Quiz configuration</div>
+
+        <div style="margin-bottom:1rem;">
+          <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Quick topics</div>
+          <div class="chips" id="chips">
+            <button class="chip" onclick="setTopic(this,'Thermodynamics')">Thermodynamics</button>
+            <button class="chip" onclick="setTopic(this,'Newton\'s Laws of Motion')">Newton's Laws</button>
+            <button class="chip" onclick="setTopic(this,'Fluid Mechanics')">Fluid Mechanics</button>
+            <button class="chip" onclick="setTopic(this,'Strength of Materials')">Strength of Materials</button>
+            <button class="chip" onclick="setTopic(this,'Heat Transfer')">Heat Transfer</button>
+            <button class="chip" onclick="setTopic(this,'Engineering Mechanics')">Engineering Mechanics</button>
+            <button class="chip" onclick="setTopic(this,'Control Systems')">Control Systems</button>
+            <button class="chip" onclick="setTopic(this,'Manufacturing Processes')">Manufacturing</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="topic-input">Topic / Subject</label>
+            <input id="topic-input" type="text" placeholder="e.g. Bernoulli's Principle, Stress Analysis…"/>
+          </div>
+          <div class="field">
+            <label for="level-select">Education Level</label>
+            <select id="level-select">
+              <option value="undergraduate">Undergraduate (B.Tech / B.E.)</option>
+              <option value="high school">Higher Secondary (11–12th)</option>
+              <option value="postgraduate">Postgraduate (M.Tech / M.E.)</option>
+              <option value="competitive exam">Competitive Exam (GATE / GRE)</option>
+              <option value="diploma">Polytechnic / Diploma</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="numq-select">Number of Questions</label>
+            <select id="numq-select">
+              <option value="3">3 — Quick check</option>
+              <option value="5" selected>5 — Standard quiz</option>
+              <option value="8">8 — Full assessment</option>
+              <option value="10">10 — Exam practice</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="type-select">Question Style</label>
+            <select id="type-select">
+              <option value="mixed">Mixed — conceptual + numerical</option>
+              <option value="conceptual">Conceptual / theory only</option>
+              <option value="numerical">Numerical / problem-solving</option>
+              <option value="application">Real-world application</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="field">
+            <label for="focus-input">Specific focus or instructions (optional)</label>
+            <textarea id="focus-input" placeholder="e.g. Include problems from manufacturing context, focus on 2nd law of thermodynamics, avoid calculus-heavy questions…"></textarea>
+          </div>
+        </div>
+
+        <button class="gen-btn" id="gen-btn" onclick="generateQuiz()">
+          Generate Quiz
+        </button>
+      </div>
+
+      <div class="loading-card" id="loading-card">
+        <div class="spinner"></div>
+        <div class="loading-text">Generating your quiz…</div>
+        <div class="loading-sub">Gemini AI is crafting questions tailored to your specifications</div>
+      </div>
+
+      <!-- Quiz Output -->
+      <div id="quiz-section">
+        <div class="score-tracker" id="score-tracker" style="display:none;">
+          <div class="score-num" id="score-display">0</div>
+          <div class="score-info">
+            <div class="score-label">Score</div>
+            <div class="progress-rail">
+              <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="score-pct" id="score-pct">0% correct</div>
+          </div>
+        </div>
+
+        <div class="quiz-meta-bar">
+          <div class="quiz-heading" id="quiz-heading"></div>
+          <div class="quiz-pills" id="quiz-pills"></div>
+        </div>
+
+        <div id="questions-container"></div>
+
+        <div class="quiz-actions">
+          <button class="action-btn secondary" onclick="resetToForm()">← New quiz</button>
+          <button class="action-btn primary" onclick="printQuiz()">Print / Export</button>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="app-footer">
+      EduQuiz AI &nbsp;·&nbsp; Powered by Google Gemini AI &nbsp;·&nbsp; Built for Educators
+    </footer>
+
+  </div>
+</div>
+
+<script>
+/* ── STATE ── */
+const ACCESS_CODE = "EDUDEMO2025";
+let geminiApiKey  = 'AIzaSyBxYMw1_Xe2SPGo4ZDIDDzRRfCpn7ez6U8';
+let quizData      = null;
+let answered      = {};
+let correctCount  = 0;
+
+/* ── AUTH ── */
+function doLogin() {
+  const code = document.getElementById('access-input').value.trim().toUpperCase();
+  const err  = document.getElementById('login-error');
+
+  if (code !== ACCESS_CODE) {
+    err.textContent = 'Incorrect access code. Please try again.';
+    document.getElementById('access-input').value = '';
+    document.getElementById('access-input').focus();
+    return;
+  }
+
+  sessionStorage.setItem('eduquiz_auth', '1');
+  err.textContent = '';
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('app-screen').classList.add('active');
+}
+
+function doSignout() {
+  sessionStorage.removeItem('eduquiz_auth');
+  document.getElementById('app-screen').classList.remove('active');
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('access-input').value = '';
+}
+
+/* Auto-restore session */
+if (sessionStorage.getItem('eduquiz_auth') === '1') {
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('app-screen').classList.add('active');
+}
+
+/* ── TOPIC CHIPS ── */
+function setTopic(el, t) {
+  document.getElementById('topic-input').value = t;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ── QUIZ GENERATION ── */
+async function generateQuiz() {
+  const topic = document.getElementById('topic-input').value.trim();
+  const level = document.getElementById('level-select').value;
+  const numq  = document.getElementById('numq-select').value;
+  const style = document.getElementById('type-select').value;
+  const focus = document.getElementById('focus-input').value.trim();
+
+  if (!topic) { showError('Please enter a topic or select one from the quick topics above.'); return; }
+  if (!geminiApiKey) { showError('API key missing. Please sign out and log in again with your Gemini key.'); return; }
+
+  clearError();
+  setLoading(true);
+
+  const styleDesc = {
+    mixed:       'a mix of conceptual and numerical questions',
+    conceptual:  'conceptual and theory-based questions only',
+    numerical:   'numerical problem-solving questions requiring calculations',
+    application: 'real-world application and case-based questions'
+  }[style];
+
+  const prompt = `You are an expert educator creating a precise quiz.
+
+Generate exactly ${numq} multiple-choice questions about "${topic}" for ${level} level students.
+Question style: ${styleDesc}.
+${focus ? 'Specific instructions: ' + focus : ''}
+
+Return ONLY valid JSON — no markdown, no backticks, no preamble. Exact format:
+{
+  "title": "Short descriptive quiz title",
+  "questions": [
+    {
+      "question": "Full question text here?",
+      "options": ["Option text 1", "Option text 2", "Option text 3", "Option text 4"],
+      "answer": 0,
+      "explanation": "Clear explanation of why this answer is correct."
+    }
+  ]
+}
+
+Note: "answer" is the 0-based index of the correct option (0=first, 1=second, 2=third, 3=fourth).
+Make questions accurate, pedagogically sound, and progressively challenging.
+CRITICAL: Output ONLY the raw JSON object. Start with { and end with }. No other text before or after.`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 8192,
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = data?.error?.message || `API error ${res.status}`;
+      throw new Error(msg);
+    }
+
+    const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // Strip markdown fences and extract pure JSON object
+    let clean  = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const jsonStart = clean.indexOf('{');
+    const jsonEnd   = clean.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1) {
+      clean = clean.slice(jsonStart, jsonEnd + 1);
+    }
+    // Replace curly/smart quotes with straight quotes so JSON.parse doesn't choke
+    clean = clean
+      .replace(/[‘’]/g, "'")   // smart single quotes -> '
+      .replace(/[“”]/g, '"')   // smart double quotes -> "
+      .replace(/[–—]/g, '-')   // em/en dash -> hyphen
+      .replace(/[…]/g, '...');      // ellipsis char -> ...
+    quizData = JSON.parse(clean);
+    answered    = {};
+    correctCount = 0;
+    renderQuiz(topic, level, numq, style);
+
+  } catch (e) {
+    setLoading(false);
+    if (e.message.includes('API_KEY_INVALID') || e.message.includes('400')) {
+      showError('Your Gemini API key appears to be invalid. Please sign out and enter the correct key.');
+    } else {
+      showError('Could not generate quiz: ' + (e.message || 'Unknown error. Check your API key and try again.'));
+    }
+  }
+}
+
+/* ── RENDER QUIZ ── */
+function renderQuiz(topic, level, numq, style) {
+  setLoading(false);
+  document.getElementById('form-card').style.display = 'none';
+
+  const section = document.getElementById('quiz-section');
+  section.classList.add('visible');
+  section.style.display = 'block';
+
+  document.getElementById('quiz-heading').textContent = quizData.title || topic + ' Quiz';
+
+  const pills = document.getElementById('quiz-pills');
+  pills.innerHTML = `
+    <span class="pill">${numq} questions</span>
+    <span class="pill">${level}</span>
+    <span class="pill">${style}</span>
+  `;
+
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+
+  quizData.questions.forEach((q, qi) => {
+    const letters = ['A', 'B', 'C', 'D'];
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = 'qcard-' + qi;
+    card.innerHTML = `
+      <div class="q-number">Question ${qi + 1} of ${quizData.questions.length}</div>
+      <div class="q-text">${q.question}</div>
+      <div id="opts-${qi}">
+        ${q.options.map((opt, oi) => `
+          <div class="option" id="opt-${qi}-${oi}" onclick="selectAnswer(${qi},${oi})">
+            <span class="option-letter">${letters[oi]}</span>
+            <span>${opt}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="explanation" id="exp-${qi}">
+        <div class="explanation-label">Explanation</div>
+        ${q.explanation}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+/* ── SELECT ANSWER ── */
+function selectAnswer(qi, oi) {
+  if (answered[qi] !== undefined) return;
+  answered[qi] = oi;
+
+  const q = quizData.questions[qi];
+  const correctIdx = typeof q.answer === 'number' ? q.answer : parseInt(q.answer);
+  const isCorrect = oi === correctIdx;
+
+  if (isCorrect) correctCount++;
+
+  for (let i = 0; i < q.options.length; i++) {
+    const el = document.getElementById(`opt-${qi}-${i}`);
+    el.classList.add('locked');
+    if (i === correctIdx) el.classList.add('correct');
+    else if (i === oi && !isCorrect) el.classList.add('wrong');
+  }
+
+  document.getElementById(`exp-${qi}`).classList.add('visible');
+  updateScore();
+}
+
+/* ── SCORE ── */
+function updateScore() {
+  const total = quizData.questions.length;
+  if (Object.keys(answered).length === 0) return;
+
+  const tracker = document.getElementById('score-tracker');
+  tracker.style.display = 'flex';
+
+  document.getElementById('score-display').textContent = `${correctCount}/${total}`;
+  const pct = Math.round((correctCount / total) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('score-pct').textContent = pct + '% correct';
+}
+
+/* ── RESET ── */
+function resetToForm() {
+  quizData = null; answered = {}; correctCount = 0;
+  document.getElementById('form-card').style.display = 'block';
+  const qs = document.getElementById('quiz-section');
+  qs.style.display = 'none';
+  qs.classList.remove('visible');
+  document.getElementById('score-tracker').style.display = 'none';
+  document.getElementById('questions-container').innerHTML = '';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  window.scrollTo(0, 0);
+}
+
+/* ── PRINT ── */
+function printQuiz() { window.print(); }
+
+/* ── UI HELPERS ── */
+function setLoading(on) {
+  document.getElementById('gen-btn').disabled = on;
+  document.getElementById('loading-card').classList.toggle('visible', on);
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-bar');
+  el.textContent = msg;
+  el.classList.add('visible');
+  window.scrollTo(0, 0);
+}
+
+function clearError() {
+  document.getElementById('error-bar').classList.remove('visible');
+}
+</script>
+</body>
+</html>
